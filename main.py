@@ -85,6 +85,7 @@ def search_by_year(conn):
                 if start > end:
                     print("Start year must be less than or equal to end year!")
                     continue
+                save_search(years)
                 cursor.execute("""SELECT title, release_year, description
                                   FROM film
                                   WHERE release_year BETWEEN %s AND %s""",
@@ -94,6 +95,7 @@ def search_by_year(conn):
                     print("Invalid format! Enter a 4-digit year (YYYY).")
                     continue
                 year = int(years)
+                save_search(year)
                 cursor.execute("""SELECT title, release_year, description
                                   FROM film
                                   WHERE release_year = %s""", (year,))
@@ -154,6 +156,5 @@ def main():
             print("Invalid choice. Try again.")
     conn.close()
     print("Goodbye!  See you later!")
-
 
 main()
