@@ -1,11 +1,17 @@
-
-import pymysql
 from pymongo import MongoClient
+import os
+import dotenv
+from pathlib import Path
+import pymysql
+
+
+dotenv.load_dotenv(Path('.env'))
+
 
 # MySQL
-MYSQL_HOST = "ich-db.edu.itcareerhub.de"
-MYSQL_USER = "ich1"
-MYSQL_PASSWORD = "password"
+MYSQL_HOST = os.environ.get('HOST')
+MYSQL_USER = os.environ.get('USER')
+MYSQL_PASSWORD = os.environ.get('PASSWORD')
 MYSQL_DB = "sakila"
 
 def get_mysql_connection():
@@ -21,7 +27,7 @@ def get_mysql_connection():
     )
 
 # ---------------- MongoDB ----------------
-MONGO_URI = "mongodb://ich_editor:verystrongpassword@mongo.itcareerhub.de:27017/?readPreference=primary&ssl=false&authMechanism=DEFAULT&authSource=ich_edit"
+MONGO_URI = os.environ.get('MONGO_URI')
 MONGO_DB_NAME = "ich_edit"
 MONGO_COLLECTION_NAME = "final_project_250425-ptm_Raisa"
 
