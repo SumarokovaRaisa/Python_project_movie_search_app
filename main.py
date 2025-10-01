@@ -32,6 +32,11 @@ def display_results(results, page_size=10):
 
 
 def search_by_title(conn):
+    """
+    Searching movie by title or keywords.
+    :param conn:
+    :return: movie title, year of release and description
+    """
     title = input("Enter movie title or keyword: ")
     save_search(title)
     with conn.cursor() as cursor:
@@ -48,6 +53,11 @@ def search_by_title(conn):
 
 
 def search_by_genre(conn):
+    """
+    Searching movie by genre.
+    :param conn:
+    :return: movie title, year of release, genre and description
+    """
     genre = select_genre(genres)
     save_search(genre)
     with conn.cursor() as cursor:
@@ -66,6 +76,11 @@ def search_by_genre(conn):
 
 
 def search_by_year(conn):
+    """
+    Searching movie by year or range of years from 1990 to 2025, using format YYYY-YYYY
+    :param conn:
+    :return: movie title, year of release, genre and description
+    """
     while True:
         years = input("Enter a year or range (e.g. 2006-2008) from 1990 to 2025: ").strip()
         with conn.cursor() as cursor:
@@ -110,8 +125,9 @@ def search_by_year(conn):
 
 def show_popular_queries():
     """
-    Show top 5 popular queries from MongoDB.
-    Two options: by frequency and by latest.
+    Shows top 5 popular queries from MongoDB.
+    Has two options: by frequency and by latest.
+    return: date formatted as YYYY-MM-DD, time formatted as HH:MM, item
     """
     print("\n------ Top 5 Queries by Frequency ------")
     pipeline = [
@@ -129,6 +145,10 @@ def show_popular_queries():
 
 
 def main():
+    """
+    Main function of the program. Asking user to enter search query and show results.
+    :return: query results from MySQL database
+    """
     conn = get_mysql_connection()
     print("_"*50,"\nWelcome to our new Movie Search App!\n" + "_"*50)
 
