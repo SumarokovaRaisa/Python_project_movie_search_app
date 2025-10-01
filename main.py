@@ -7,7 +7,7 @@ genres = ['Action', 'Animation', 'Children', 'Classics', 'Comedy', 'Documentary'
           'Sci-Fi', 'Sports', 'Travel', 'New']
 
 # MongoDB collection for storing search queries
-mongo_collection = get_mongo_collection()
+mongo_client, mongo_collection = get_mongo_collection()
 
 
 def save_search(query):
@@ -15,6 +15,7 @@ def save_search(query):
     :param query: search string (title, genre, year, etc.)"""
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
     mongo_collection.insert_one({"query": query, "datetime": now})
+
 
 def execute_query(conn, query, params=()):
     """
@@ -28,6 +29,7 @@ def execute_query(conn, query, params=()):
         cursor.execute(query, params)
         return cursor.fetchall()
 
+
 def handle_results(result):
     """ Handle query results: print message if empty or display results
         :param result: query result set"""
@@ -36,6 +38,7 @@ def handle_results(result):
         return False
     display_results(result)
     return True
+
 
 def display_results(results, page_size=10):
     """
@@ -49,7 +52,7 @@ def display_results(results, page_size=10):
         for row in page:
             print(f"{counter}. {row[0]} ({row[1]}),\nDescription: '{row[2]}'")
             counter += 1
-        if len(page) < page_size: # if last page is smaller → stop
+        if len(page) < page_size:  # if last page is smaller → stop
             break
         if input("Show more? (y/n): ").lower() != "y":
             break
@@ -64,8 +67,8 @@ def search_by_title(conn):
     title = input("Enter movie title or keyword: ")
     save_search(title)
     query = """SELECT title, release_year, description
-             FROM film
-             WHERE title LIKE %s"""
+               FROM film
+               WHERE title LIKE %s"""
     result = execute_query(conn, query, ("%" + title + "%",))
     handle_results(result)
 
@@ -79,10 +82,10 @@ def search_by_genre(conn):
     genre = select_genre(genres)
     save_search(genre)
     query = """SELECT f.title, f.release_year, c.name, f.description
-             FROM film f
-             JOIN film_category fc ON fc.film_id = f.film_id
-             JOIN category c ON fc.category_id = c.category_id
-             WHERE LOWER(c.name) = LOWER(%s)"""
+               FROM film f
+                        JOIN film_category fc ON fc.film_id = f.film_id
+                        JOIN category c ON fc.category_id = c.category_id
+               WHERE LOWER(c.name) = LOWER(%s)"""
     result = execute_query(conn, query, (genre,))
     handle_results(result)
 
@@ -94,7 +97,7 @@ def validate_years(years, genre=None):
     :param genre: optional movie genre; if provided, query filters by genre
     :return: tuple (query, params) or None if input is invalid
     """
-    if "-" in years: # Проверка диапазона лет
+    if "-" in years:  # Проверка диапазона лет
         parts = years.split("-")
         if len(parts) != 2 or not all(p.isdigit() for p in parts):
             print("Invalid format! Use YYYY-YYYY.")
@@ -124,7 +127,7 @@ def validate_years(years, genre=None):
             params = (start, end)
         return query, params
 
-    else:   # Проверка одного года
+    else:  # Проверка одного года
         if len(years) != 4 or not years.isdigit():
             print("Invalid format! Enter a 4-digit year (YYYY).")
             return None
@@ -151,27 +154,29 @@ def validate_years(years, genre=None):
 
         return query, params
 
+
 def search_by_genre_and_year(conn):
     """
     Search movies by genre AND year (or year range).
     Both genre and year are required.
     :param conn: MySQL connection
     """
-    genre = select_genre(genres) # Обязательный выбор жанра
+    genre = select_genre(genres)  # Обязательный выбор жанра
 
     while True:
         # Ввод года или диапазона лет
         years = input("Enter a year or range (e.g. 2006-2008) from 1990 to 2025: ").strip()
 
-        validated = validate_years(years, genre) # Валидация и подготовка запроса
+        validated = validate_years(years, genre)  # Валидация и подготовка запроса
         if not validated:
             continue  # если ввод некорректный, повторяем
 
         query, params = validated
-        result = execute_query(conn, query, params) # Выполнение запроса
+        result = execute_query(conn, query, params)  # Выполнение запроса
 
-        if handle_results(result): # Обработка результатов
+        if handle_results(result):  # Обработка результатов
             break
+
 
 def search_by_year(conn):
     """
@@ -189,6 +194,7 @@ def search_by_year(conn):
 
         if handle_results(result):
             break
+
 
 def show_last_queries():
     """
@@ -222,36 +228,39 @@ def main():
     :return: query results from MySQL database
     """
     conn = get_mysql_connection()
-    print("="*50,"\nWelcome to our new Movie Search App!\n" + "="*50)
+    print("=" * 50, "\nWelcome to our new Movie Search App!\n" + "=" * 50)
+    try:
+        while True:
+            print("Which movie do you want to search?\n" + "*" * 50)
+            choice = input("Enter 1 - if you want to find the movie by title or keyword."
+                           "\nEnter 2 - if you want to find the movie by genre. "
+                           "\nEnter 3 - if you want to find the movie by year or range of years. "
+                           "\nEnter 4 - if you want to find the movie by genre and year or range of years. "
+                           "\nEnter 5 - show top 5 popular queries."
+                           "\nEnter 6 - show 5 latest queries."
+                           "\nEnter 7 - if you want to EXIT. "
+                           "\n" + "*" * 50 +
+                           "\nYour Choice: ").strip()
+            if choice == "1":
+                search_by_title(conn)
+            elif choice == "2":
+                search_by_genre(conn)
+            elif choice == "3":
+                search_by_year(conn)
+            elif choice == "4":
+                search_by_genre_and_year(conn)
+            elif choice == "5":
+                show_top_5_queries()
+            elif choice == "6":
+                show_last_queries()
+            elif choice == "7":
+                break
+            else:
+                print("Invalid choice. Try again.")
+    finally:
+        conn.close()
+        mongo_client.close()
+        print("Goodbye!  See you later!")
 
-    while True:
-        print("\nWhich movie do you want to search?\n" + "-"*50)
-        choice = input("Enter 1 - if you want to find the movie by title or keyword."
-                "\nEnter 2 - if you want to find the movie by genre. "
-                "\nEnter 3 - if you want to find the movie by year or range of years. "
-                "\nEnter 4 - if you want to find the movie by genre and year or range of years. "                   
-                "\nEnter 5 - show top 5 popular queries." 
-                "\nEnter 6 - show 5 latest queries." 
-                "\nEnter 7 - if you want to EXIT. "  
-                "\n----------------------------------------------"      
-                "\nYour Choice: ").strip()
-        if choice == "1":
-            search_by_title(conn)
-        elif choice == "2":
-            search_by_genre(conn)
-        elif choice == "3":
-            search_by_year(conn)
-        elif choice == "4":
-            search_by_genre_and_year(conn)
-        elif choice == "5":
-            show_top_5_queries()
-        elif choice == "6":
-            show_last_queries()
-        elif choice == "7":
-            break
-        else:
-            print("Invalid choice. Try again.")
-    conn.close()
-    print("Goodbye!  See you later!")
 
 main()

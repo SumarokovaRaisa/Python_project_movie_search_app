@@ -43,7 +43,9 @@ def get_mongo_collection():
     if MONGO_COLLECTION_NAME not in db.list_collection_names():
         db.create_collection(MONGO_COLLECTION_NAME)
 
-    return db[MONGO_COLLECTION_NAME]
+    collection = db[MONGO_COLLECTION_NAME]
+    return client, collection
+
 
 def show_popular_queries():
     """
